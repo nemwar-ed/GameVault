@@ -42,3 +42,25 @@ class DatabaseTests(unittest.TestCase):
             database.disconnect()
 
         self.assertEqual(versions, [saved_version])
+
+    def test_add_ownership_and_get_ownership(self) -> None:
+        """Eine Version kann mehrere Besitzquellen haben."""
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            database = Database(Path(temporary_directory) / "test_gamevault.db")
+            database.connect()
+
+            game = database.add_game("Diablo II", 2000)
+            version = database.add_version(game.id, platform="PC")
+            saved_ownership = database.add_ownership(
+                version.id,
+                connector="Battle.net",
+                source_id="diablo-ii",
+                installed=True,
+                install_path="C:/Games/Diablo II",
+            )
+            ownership = database.get_ownership(version.id)
+
+            database.disconnect()
+
+        self.assertEqual(ownership, [saved_ownership])

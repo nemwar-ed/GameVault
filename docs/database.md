@@ -24,6 +24,8 @@ werden darunter verknüpft.
 - `add_version(game_id, platform, edition)`: Speichert eine Edition auf einer
   Plattform unter einem Spiel.
 - `get_versions(game_id)`: Liest alle Versionen eines Spiels.
+- `add_ownership(...)`: Speichert eine Besitzquelle einer Spielversion.
+- `get_ownership(version_id)`: Liest alle Besitzquellen einer Spielversion.
 
 Die spätere Dublettenerkennung wird getrennt entwickelt. Sie darf nicht allein
 auf einem ähnlichen Titel beruhen, weil Editionen und gleichnamige Spiele bewusst

@@ -10,6 +10,7 @@ from typing import Optional
 
 from gamevault.models.game import Game
 from gamevault.models.game_version import GameVersion
+from gamevault.models.ownership import Ownership
 
 
 class Database:
@@ -158,6 +159,72 @@ class Database:
 
         return [self._create_game_version(row) for row in rows]
 
+    def add_ownership(
+        self,
+        version_id: int,
+        connector: str,
+        source_id: str | None = None,
+        installed: bool = False,
+        install_path: str | None = None,
+    ) -> Ownership:
+        """Speichert eine Quelle, über die eine Spielversion vorhanden ist."""
+
+        normalized_connector = connector.strip()
+        if not normalized_connector:
+            raise ValueError("Eine Besitzquelle darf nicht leer sein.")
+
+        normalized_source_id = source_id.strip() if source_id else None
+        normalized_install_path = install_path.strip() if install_path else None
+        connection = self._require_connection()
+        cursor = connection.execute(
+            """
+            INSERT INTO ownership (
+                version_id,
+                connector,
+                source_id,
+                installed,
+                install_path
+            )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                version_id,
+                normalized_connector,
+                normalized_source_id,
+                int(installed),
+                normalized_install_path,
+            ),
+        )
+        connection.commit()
+
+        row = connection.execute(
+            """
+            SELECT id, version_id, connector, source_id, installed, install_path
+            FROM ownership
+            WHERE id = ?
+            """,
+            (cursor.lastrowid,),
+        ).fetchone()
+        if row is None:
+            raise RuntimeError("Der gespeicherte Besitz konnte nicht gelesen werden.")
+
+        return self._create_ownership(row)
+
+    def get_ownership(self, version_id: int) -> list[Ownership]:
+        """Liest alle Besitzquellen einer Spielversion."""
+
+        rows = self._require_connection().execute(
+            """
+            SELECT id, version_id, connector, source_id, installed, install_path
+            FROM ownership
+            WHERE version_id = ?
+            ORDER BY id
+            """,
+            (version_id,),
+        ).fetchall()
+
+        return [self._create_ownership(row) for row in rows]
+
     @staticmethod
     def _create_game_version(row: sqlite3.Row) -> GameVersion:
         """Erzeugt ein Version-Modell aus einer SQLite-Zeile."""
@@ -167,6 +234,19 @@ class Database:
             game_id=row["game_id"],
             edition=row["edition"],
             platform=row["platform"],
+        )
+
+    @staticmethod
+    def _create_ownership(row: sqlite3.Row) -> Ownership:
+        """Erzeugt ein Besitz-Modell aus einer SQLite-Zeile."""
+
+        return Ownership(
+            id=row["id"],
+            version_id=row["version_id"],
+            connector=row["connector"],
+            source_id=row["source_id"],
+            installed=bool(row["installed"]),
+            install_path=row["install_path"],
         )
 
     def _require_connection(self) -> sqlite3.Connection:
