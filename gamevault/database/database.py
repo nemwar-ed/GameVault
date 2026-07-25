@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Optional
 
 from gamevault.models.game import Game
+from gamevault.models.game_version import GameVersion
 
 
 class Database:
@@ -111,6 +112,61 @@ class Database:
             id=row["id"],
             title=row["title"],
             release_year=row["release_year"],
+        )
+
+    def add_version(
+        self,
+        game_id: int,
+        platform: str,
+        edition: str | None = None,
+    ) -> GameVersion:
+        """Speichert eine Edition auf einer Plattform für ein Spiel."""
+
+        normalized_platform = platform.strip()
+        if not normalized_platform:
+            raise ValueError("Eine Plattform darf nicht leer sein.")
+
+        normalized_edition = edition.strip() if edition else None
+        connection = self._require_connection()
+        cursor = connection.execute(
+            "INSERT INTO versions (game_id, edition, platform) VALUES (?, ?, ?)",
+            (game_id, normalized_edition, normalized_platform),
+        )
+        connection.commit()
+
+        row = connection.execute(
+            "SELECT id, game_id, edition, platform FROM versions WHERE id = ?",
+            (cursor.lastrowid,),
+        ).fetchone()
+        if row is None:
+            raise RuntimeError("Die gespeicherte Version konnte nicht gelesen werden.")
+
+        return self._create_game_version(row)
+
+    def get_versions(self, game_id: int) -> list[GameVersion]:
+        """Liest alle Versionen eines Spiels in ihrer Erstellungsreihenfolge."""
+
+        rows = self._require_connection().execute(
+            """
+            SELECT id, game_id, edition, platform
+            FROM versions
+            WHERE game_id = ?
+            ORDER BY id
+            """,
+            (game_id,),
+        ).fetchall()
+
+        return [self._create_game_version(row) for row in rows]
+
+    @staticmethod
+    def _create_game_version(row: sqlite3.Row) -> GameVersion:
+        """Erzeugt ein Version-Modell aus einer SQLite-Zeile."""
+
+        return GameVersion(
+            id=row["id"],
+            game_id=row["game_id"],
+            edition=row["edition"],
+            platform=row["platform"],
         )
 
     def _require_connection(self) -> sqlite3.Connection:

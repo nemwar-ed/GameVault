@@ -21,6 +21,9 @@ werden darunter verknüpft.
 
 - `add_game(title, release_year)`: Speichert einen zentralen Spieleintrag.
 - `get_game(game_id)`: Liest einen Spieleintrag über seine GameVault-ID.
+- `add_version(game_id, platform, edition)`: Speichert eine Edition auf einer
+  Plattform unter einem Spiel.
+- `get_versions(game_id)`: Liest alle Versionen eines Spiels.
 
 Die spätere Dublettenerkennung wird getrennt entwickelt. Sie darf nicht allein
 auf einem ähnlichen Titel beruhen, weil Editionen und gleichnamige Spiele bewusst
