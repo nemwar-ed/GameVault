@@ -2,7 +2,7 @@ import sys
 
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow
 
-from src.database.database import Database
+from gamevault.database.database import Database
 
 
 class MainWindow(QMainWindow):

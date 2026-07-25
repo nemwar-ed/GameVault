@@ -9,6 +9,10 @@ __pycache__/
 # IDE
 .vscode/
 .idea/
+*.geany
+
+# Lokale GameVault-Daten
+data/*.db
 
 # OS
 .DS_Store
